@@ -36,25 +36,25 @@ android {
 
     flavorDimensions "tfliteInference"
     productFlavors {
-       // The TFLite inference is built using the TFLite Java interpreter.
-       interpreter {
-           dimension "tfliteInference"
-       }
-       // Default: The TFLite inference is built using the TFLite Task library (high-level API).
-       taskApi {
-           getIsDefault().set(true)
-           dimension "tfliteInference"
-       }
+        // The TFLite inference is built using the TFLite Java interpreter.
+        interpreter {
+            dimension "tfliteInference"
+        }
+        // Default: The TFLite inference is built using the TFLite Task library (high-level API).
+        taskApi {
+            getIsDefault().set(true)
+            dimension "tfliteInference"
+        }
     }
 }
 
 // import DownloadModels task
 project.ext.ASSET_DIR = projectDir.toString() + '/src/main/assets'
-project.ext.TMP_DIR   = project.buildDir.toString() + '/downloads'
+project.ext.TMP_DIR = project.buildDir.toString() + '/downloads'
 
 // Download default models; if you wish to use your own models then
 // place them in the "assets" directory and comment out this line.
-apply from:'download_model.gradle'
+apply from: 'download_model.gradle'
 
 dependencies {
 
