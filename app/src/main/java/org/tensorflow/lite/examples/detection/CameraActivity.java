@@ -62,6 +62,8 @@ public abstract class CameraActivity extends AppCompatActivity
         Camera.PreviewCallback,
         CompoundButton.OnCheckedChangeListener,
         View.OnClickListener {
+
+    // caonima
     private static final Logger LOGGER = new Logger();
 
     private static final int PERMISSIONS_REQUEST = 1;
