@@ -49,6 +49,7 @@ import java.util.List;
  * objects.
  */
 public class DetectorActivity extends CameraActivity implements OnImageAvailableListener {
+
     private static final Logger LOGGER = new Logger();
 
     // Configuration values for the prepackaged SSD model.
@@ -57,12 +58,15 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
     private static final String TF_OD_API_MODEL_FILE = "detect.tflite";
     private static final String TF_OD_API_LABELS_FILE = "labelmap.txt";
     private static final DetectorMode MODE = DetectorMode.TF_OD_API;
+
     // Minimum detection confidence to track a detection.
     private static final float MINIMUM_CONFIDENCE_TF_OD_API = 0.5f;
     private static final boolean MAINTAIN_ASPECT = false;
     private static final Size DESIRED_PREVIEW_SIZE = new Size(640, 480);
-    private static final boolean SAVE_PREVIEW_BITMAP = false;
+
+    private static final boolean SAVE_PREVIEW_BITMAP = true;
     private static final float TEXT_SIZE_DIP = 10;
+
     OverlayView trackingOverlay;
     private Integer sensorOrientation;
 
@@ -86,9 +90,10 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
     @Override
     public void onPreviewSizeChosen(final Size size, final int rotation) {
-        final float textSizePx =
-                TypedValue.applyDimension(
-                        TypedValue.COMPLEX_UNIT_DIP, TEXT_SIZE_DIP, getResources().getDisplayMetrics());
+
+        final float textSizePx = TypedValue
+                .applyDimension(TypedValue.COMPLEX_UNIT_DIP, TEXT_SIZE_DIP, getResources().getDisplayMetrics());
+
         borderedText = new BorderedText(textSizePx);
         borderedText.setTypeface(Typeface.MONOSPACE);
 
@@ -97,20 +102,19 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
         int cropSize = TF_OD_API_INPUT_SIZE;
 
         try {
-            detector =
-                    TFLiteObjectDetectionAPIModel.create(
-                            this,
-                            TF_OD_API_MODEL_FILE,
-                            TF_OD_API_LABELS_FILE,
-                            TF_OD_API_INPUT_SIZE,
-                            TF_OD_API_IS_QUANTIZED);
+            detector = TFLiteObjectDetectionAPIModel.create(
+                    this,
+                    TF_OD_API_MODEL_FILE,
+                    TF_OD_API_LABELS_FILE,
+                    TF_OD_API_INPUT_SIZE,
+                    TF_OD_API_IS_QUANTIZED);
+
             cropSize = TF_OD_API_INPUT_SIZE;
+
         } catch (final IOException e) {
             e.printStackTrace();
             LOGGER.e(e, "Exception initializing Detector!");
-            Toast toast =
-                    Toast.makeText(
-                            getApplicationContext(), "Detector could not be initialized", Toast.LENGTH_SHORT);
+            Toast toast = Toast.makeText(getApplicationContext(), "Detector could not be initialized", Toast.LENGTH_SHORT);
             toast.show();
             finish();
         }
@@ -125,24 +129,24 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
         rgbFrameBitmap = Bitmap.createBitmap(previewWidth, previewHeight, Config.ARGB_8888);
         croppedBitmap = Bitmap.createBitmap(cropSize, cropSize, Config.ARGB_8888);
 
-        frameToCropTransform =
-                ImageUtils.getTransformationMatrix(
-                        previewWidth, previewHeight,
-                        cropSize, cropSize,
-                        sensorOrientation, MAINTAIN_ASPECT);
+        frameToCropTransform = ImageUtils.getTransformationMatrix(
+                previewWidth,
+                previewHeight,
+                cropSize,
+                cropSize,
+                sensorOrientation,
+                MAINTAIN_ASPECT
+        );
 
         cropToFrameTransform = new Matrix();
         frameToCropTransform.invert(cropToFrameTransform);
 
         trackingOverlay = (OverlayView) findViewById(R.id.tracking_overlay);
         trackingOverlay.addCallback(
-                new DrawCallback() {
-                    @Override
-                    public void drawCallback(final Canvas canvas) {
-                        tracker.draw(canvas);
-                        if (isDebug()) {
-                            tracker.drawDebug(canvas);
-                        }
+                canvas -> {
+                    tracker.draw(canvas);
+                    if (isDebug()) {
+                        tracker.drawDebug(canvas);
                     }
                 });
 
@@ -169,64 +173,59 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
         final Canvas canvas = new Canvas(croppedBitmap);
         canvas.drawBitmap(rgbFrameBitmap, frameToCropTransform, null);
+
         // For examining the actual TF input.
         if (SAVE_PREVIEW_BITMAP) {
             ImageUtils.saveBitmap(croppedBitmap);
         }
 
         runInBackground(
-                new Runnable() {
-                    @Override
-                    public void run() {
-                        LOGGER.i("Running detection on image " + currTimestamp);
-                        final long startTime = SystemClock.uptimeMillis();
-                        final List<Detector.Recognition> results = detector.recognizeImage(croppedBitmap);
-                        lastProcessingTimeMs = SystemClock.uptimeMillis() - startTime;
+                () -> {
+                    LOGGER.i("Running detection on image " + currTimestamp);
+                    final long startTime = SystemClock.uptimeMillis();
 
-                        cropCopyBitmap = Bitmap.createBitmap(croppedBitmap);
-                        final Canvas canvas = new Canvas(cropCopyBitmap);
-                        final Paint paint = new Paint();
-                        paint.setColor(Color.RED);
-                        paint.setStyle(Style.STROKE);
-                        paint.setStrokeWidth(2.0f);
+                    final List<Detector.Recognition> results = detector.recognizeImage(croppedBitmap);
+                    lastProcessingTimeMs = SystemClock.uptimeMillis() - startTime;
 
-                        float minimumConfidence = MINIMUM_CONFIDENCE_TF_OD_API;
-                        switch (MODE) {
-                            case TF_OD_API:
-                                minimumConfidence = MINIMUM_CONFIDENCE_TF_OD_API;
-                                break;
-                        }
+                    cropCopyBitmap = Bitmap.createBitmap(croppedBitmap);
+                    final Canvas canvas1 = new Canvas(cropCopyBitmap);
+                    final Paint paint = new Paint();
+                    paint.setColor(Color.RED);
+                    paint.setStyle(Style.STROKE);
+                    paint.setStrokeWidth(2.0f);
 
-                        final List<Detector.Recognition> mappedRecognitions =
-                                new ArrayList<Detector.Recognition>();
-
-                        for (final Detector.Recognition result : results) {
-                            final RectF location = result.getLocation();
-                            if (location != null && result.getConfidence() >= minimumConfidence) {
-                                canvas.drawRect(location, paint);
-
-                                cropToFrameTransform.mapRect(location);
-
-                                result.setLocation(location);
-                                mappedRecognitions.add(result);
-                            }
-                        }
-
-                        tracker.trackResults(mappedRecognitions, currTimestamp);
-                        trackingOverlay.postInvalidate();
-
-                        computingDetection = false;
-
-                        runOnUiThread(
-                                new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        showFrameInfo(previewWidth + "x" + previewHeight);
-                                        showCropInfo(cropCopyBitmap.getWidth() + "x" + cropCopyBitmap.getHeight());
-                                        showInference(lastProcessingTimeMs + "ms");
-                                    }
-                                });
+                    float minimumConfidence = MINIMUM_CONFIDENCE_TF_OD_API;
+                    switch (MODE) {
+                        case TF_OD_API:
+                            minimumConfidence = MINIMUM_CONFIDENCE_TF_OD_API;
+                            break;
                     }
+
+                    final List<Detector.Recognition> mappedRecognitions = new ArrayList<>();
+
+                    for (final Detector.Recognition result : results) {
+                        final RectF location = result.getLocation();
+                        if (location != null && result.getConfidence() >= minimumConfidence) {
+                            canvas1.drawRect(location, paint);
+
+                            cropToFrameTransform.mapRect(location);
+
+                            result.setLocation(location);
+                            mappedRecognitions.add(result);
+                        }
+                    }
+
+                    tracker.trackResults(mappedRecognitions, currTimestamp);
+                    trackingOverlay.postInvalidate();
+
+                    computingDetection = false;
+
+                    runOnUiThread(
+                            () -> {
+                                showFrameInfo(previewWidth + "x" + previewHeight);
+                                showCropInfo(cropCopyBitmap.getWidth() + "x" + cropCopyBitmap.getHeight());
+                                showInference(lastProcessingTimeMs + "ms");
+                            });
                 });
     }
 
@@ -254,10 +253,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                         detector.setUseNNAPI(isChecked);
                     } catch (UnsupportedOperationException e) {
                         LOGGER.e(e, "Failed to set \"Use NNAPI\".");
-                        runOnUiThread(
-                                () -> {
-                                    Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show();
-                                });
+                        runOnUiThread(() -> Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show());
                     }
                 });
     }

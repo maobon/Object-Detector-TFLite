@@ -66,6 +66,7 @@ import java.util.concurrent.TimeUnit;
 
 @SuppressLint("ValidFragment")
 public class CameraConnectionFragment extends Fragment {
+
     private static final Logger LOGGER = new Logger();
 
     /**
@@ -302,19 +303,12 @@ public class CameraConnectionFragment extends Fragment {
     private void showToast(final String text) {
         final Activity activity = getActivity();
         if (activity != null) {
-            activity.runOnUiThread(
-                    new Runnable() {
-                        @Override
-                        public void run() {
-                            Toast.makeText(activity, text, Toast.LENGTH_SHORT).show();
-                        }
-                    });
+            activity.runOnUiThread(() -> Toast.makeText(activity, text, Toast.LENGTH_SHORT).show());
         }
     }
 
     @Override
-    public View onCreateView(
-            final LayoutInflater inflater, final ViewGroup container, final Bundle savedInstanceState) {
+    public View onCreateView(final LayoutInflater inflater, final ViewGroup container, final Bundle savedInstanceState) {
         return inflater.inflate(layout, container, false);
     }
 
@@ -385,6 +379,7 @@ public class CameraConnectionFragment extends Fragment {
             } else {
                 textureView.setAspectRatio(previewSize.getHeight(), previewSize.getWidth());
             }
+
         } catch (final CameraAccessException e) {
             LOGGER.e(e, "Exception!");
         } catch (final NullPointerException e) {
@@ -404,6 +399,7 @@ public class CameraConnectionFragment extends Fragment {
     private void openCamera(final int width, final int height) {
         setUpCameraOutputs();
         configureTransform(width, height);
+
         final Activity activity = getActivity();
         final CameraManager manager = (CameraManager) activity.getSystemService(Context.CAMERA_SERVICE);
         try {

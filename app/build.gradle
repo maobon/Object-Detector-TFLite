@@ -2,13 +2,13 @@ apply plugin: 'com.android.application'
 apply plugin: 'de.undercouch.download'
 
 android {
-    compileSdkVersion 32
+    compileSdkVersion 28
 
     defaultConfig {
         applicationId "org.tensorflow.lite.examples.detection"
 
         minSdkVersion 21
-        targetSdkVersion 32
+        targetSdkVersion 28
 
         versionCode 1
         versionName "1.0"
