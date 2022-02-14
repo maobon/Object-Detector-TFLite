@@ -57,7 +57,7 @@ public abstract class CameraActivity extends AppCompatActivity
     private static final String PERMISSION_CAMERA = Manifest.permission.CAMERA;
     protected int previewWidth = 0;
     protected int previewHeight = 0;
-    private boolean debug = true;
+    private boolean debug = false;
     private Handler handler;
     private HandlerThread handlerThread;
     private boolean useCamera2API;
@@ -89,14 +89,6 @@ public abstract class CameraActivity extends AppCompatActivity
         return rgbBytes;
     }
 
-    protected int getLuminanceStride() {
-        return yRowStride;
-    }
-
-    protected byte[] getLuminance() {
-        return yuvBytes[0];
-    }
-
     /**
      * Callback for android.hardware.Camera API
      */
@@ -125,13 +117,7 @@ public abstract class CameraActivity extends AppCompatActivity
         yuvBytes[0] = bytes;
         yRowStride = previewWidth;
 
-        imageConverter =
-                new Runnable() {
-                    @Override
-                    public void run() {
-                        ImageUtils.convertYUV420SPToARGB8888(bytes, previewWidth, previewHeight, rgbBytes);
-                    }
-                };
+        imageConverter = () -> ImageUtils.convertYUV420SPToARGB8888(bytes, previewWidth, previewHeight, rgbBytes);
 
         postInferenceCallback = () -> {
             camera.addCallbackBuffer(bytes);
@@ -402,15 +388,6 @@ public abstract class CameraActivity extends AppCompatActivity
         }
     }
 
-    protected void showFrameInfo(String frameInfo) {
-    }
-
-    protected void showCropInfo(String cropInfo) {
-    }
-
-    protected void showInference(String inferenceTime) {
-    }
-
     protected abstract void processImage();
 
     protected abstract void onPreviewSizeChosen(final Size size, final int rotation);
@@ -418,8 +395,4 @@ public abstract class CameraActivity extends AppCompatActivity
     protected abstract int getLayoutId();
 
     protected abstract Size getDesiredPreviewFrameSize();
-
-    protected abstract void setNumThreads(int numThreads);
-
-    protected abstract void setUseNNAPI(boolean isChecked);
 }

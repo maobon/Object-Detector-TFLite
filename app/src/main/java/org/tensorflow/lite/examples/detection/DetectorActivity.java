@@ -24,16 +24,12 @@ import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Paint.Style;
 import android.graphics.RectF;
-import android.graphics.Typeface;
 import android.media.ImageReader.OnImageAvailableListener;
 import android.os.SystemClock;
 import android.util.Size;
-import android.util.TypedValue;
 import android.widget.Toast;
 
 import org.tensorflow.lite.examples.detection.customview.OverlayView;
-import org.tensorflow.lite.examples.detection.customview.OverlayView.DrawCallback;
-import org.tensorflow.lite.examples.detection.env.BorderedText;
 import org.tensorflow.lite.examples.detection.env.ImageUtils;
 import org.tensorflow.lite.examples.detection.env.Logger;
 import org.tensorflow.lite.examples.detection.tflite.Detector;
@@ -60,42 +56,31 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
     private static final DetectorMode MODE = DetectorMode.TF_OD_API;
 
     // Minimum detection confidence to track a detection.
-    private static final float MINIMUM_CONFIDENCE_TF_OD_API = 0.5f;
+    private static final float MINIMUM_CONFIDENCE_TF_OD_API = 0.6f;
     private static final boolean MAINTAIN_ASPECT = false;
     private static final Size DESIRED_PREVIEW_SIZE = new Size(640, 480);
 
-    private static final boolean SAVE_PREVIEW_BITMAP = true;
-    private static final float TEXT_SIZE_DIP = 10;
+    private static final boolean SAVE_PREVIEW_BITMAP = false;
 
     OverlayView trackingOverlay;
     private Integer sensorOrientation;
 
     private Detector detector;
 
-    private long lastProcessingTimeMs;
     private Bitmap rgbFrameBitmap = null;
     private Bitmap croppedBitmap = null;
     private Bitmap cropCopyBitmap = null;
 
     private boolean computingDetection = false;
 
-    private long timestamp = 0;
-
     private Matrix frameToCropTransform;
     private Matrix cropToFrameTransform;
 
     private MultiBoxTracker tracker;
 
-    private BorderedText borderedText;
 
     @Override
     public void onPreviewSizeChosen(final Size size, final int rotation) {
-
-        final float textSizePx = TypedValue
-                .applyDimension(TypedValue.COMPLEX_UNIT_DIP, TEXT_SIZE_DIP, getResources().getDisplayMetrics());
-
-        borderedText = new BorderedText(textSizePx);
-        borderedText.setTypeface(Typeface.MONOSPACE);
 
         tracker = new MultiBoxTracker(this);
 
@@ -141,7 +126,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
         cropToFrameTransform = new Matrix();
         frameToCropTransform.invert(cropToFrameTransform);
 
-        trackingOverlay = (OverlayView) findViewById(R.id.tracking_overlay);
+        trackingOverlay = findViewById(R.id.tracking_overlay);
         trackingOverlay.addCallback(
                 canvas -> {
                     tracker.draw(canvas);
@@ -155,8 +140,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
     @Override
     protected void processImage() {
-        ++timestamp;
-        final long currTimestamp = timestamp;
+
         trackingOverlay.postInvalidate();
 
         // No mutex needed as this method is not reentrant.
@@ -165,7 +149,6 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
             return;
         }
         computingDetection = true;
-        LOGGER.i("Preparing image " + currTimestamp + " for detection in bg thread.");
 
         rgbFrameBitmap.setPixels(getRgbBytes(), 0, previewWidth, 0, 0, previewWidth, previewHeight);
 
@@ -181,11 +164,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
         runInBackground(
                 () -> {
-                    LOGGER.i("Running detection on image " + currTimestamp);
-                    final long startTime = SystemClock.uptimeMillis();
-
                     final List<Detector.Recognition> results = detector.recognizeImage(croppedBitmap);
-                    lastProcessingTimeMs = SystemClock.uptimeMillis() - startTime;
 
                     cropCopyBitmap = Bitmap.createBitmap(croppedBitmap);
                     final Canvas canvas1 = new Canvas(cropCopyBitmap);
@@ -215,17 +194,11 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                         }
                     }
 
-                    tracker.trackResults(mappedRecognitions, currTimestamp);
+                    tracker.trackResults(mappedRecognitions, 0);
                     trackingOverlay.postInvalidate();
 
                     computingDetection = false;
 
-                    runOnUiThread(
-                            () -> {
-                                showFrameInfo(previewWidth + "x" + previewHeight);
-                                showCropInfo(cropCopyBitmap.getWidth() + "x" + cropCopyBitmap.getHeight());
-                                showInference(lastProcessingTimeMs + "ms");
-                            });
                 });
     }
 
@@ -242,12 +215,11 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
     // Which detection model to use: by default uses Tensorflow Object Detection API frozen
     // checkpoints.
     private enum DetectorMode {
+
         TF_OD_API;
     }
 
-    @Override
-    protected void setUseNNAPI(final boolean isChecked) {
-        runInBackground(
+        /*runInBackground(
                 () -> {
                     try {
                         detector.setUseNNAPI(isChecked);
@@ -255,11 +227,6 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                         LOGGER.e(e, "Failed to set \"Use NNAPI\".");
                         runOnUiThread(() -> Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show());
                     }
-                });
-    }
+                });*/
 
-    @Override
-    protected void setNumThreads(final int numThreads) {
-        runInBackground(() -> detector.setNumThreads(numThreads));
-    }
 }
