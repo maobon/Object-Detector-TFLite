@@ -1,2 +1,2 @@
-rootProject.name = 'android-tflite'
+rootProject.name = 'Object-Detector'
 include ':app', ':lib_task_api'
