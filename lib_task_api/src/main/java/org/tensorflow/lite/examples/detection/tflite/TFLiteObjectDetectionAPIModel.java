@@ -49,6 +49,7 @@ import java.util.List;
  * metadata from models</a>
  */
 public class TFLiteObjectDetectionAPIModel implements Detector {
+
     private static final String TAG = "TFLiteObjectDetectionAPIModelWithTaskApi";
 
     /**

@@ -24,6 +24,7 @@ import java.util.List;
  * Generic interface for interacting with different recognition engines.
  */
 public interface Detector {
+
     List<Recognition> recognizeImage(Bitmap bitmap);
 
     void enableStatLogging(final boolean debug);
