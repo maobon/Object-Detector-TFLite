@@ -1,2 +1,2 @@
-rootProject.name = 'Object-Detector'
+rootProject.name = 'Object-Detector-TFLite'
 include ':app', ':lib_task_api'
