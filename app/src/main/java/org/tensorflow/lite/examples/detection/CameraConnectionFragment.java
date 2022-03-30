@@ -7,7 +7,6 @@ import android.app.Dialog;
 import android.app.DialogFragment;
 import android.app.Fragment;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.res.Configuration;
 import android.graphics.ImageFormat;
 import android.graphics.Matrix;
@@ -94,17 +93,13 @@ public class CameraConnectionFragment extends Fragment {
     private final CameraCaptureSession.CaptureCallback captureCallback =
             new CameraCaptureSession.CaptureCallback() {
                 @Override
-                public void onCaptureProgressed(
-                        final CameraCaptureSession session,
-                        final CaptureRequest request,
-                        final CaptureResult partialResult) {
+                public void onCaptureProgressed(final CameraCaptureSession session,
+                                                final CaptureRequest request, final CaptureResult partialResult) {
                 }
 
                 @Override
-                public void onCaptureCompleted(
-                        final CameraCaptureSession session,
-                        final CaptureRequest request,
-                        final TotalCaptureResult result) {
+                public void onCaptureCompleted(final CameraCaptureSession session,
+                                               final CaptureRequest request, final TotalCaptureResult result) {
                 }
             };
     /**
@@ -189,14 +184,14 @@ public class CameraConnectionFragment extends Fragment {
     private final TextureView.SurfaceTextureListener surfaceTextureListener =
             new TextureView.SurfaceTextureListener() {
                 @Override
-                public void onSurfaceTextureAvailable(
-                        final SurfaceTexture texture, final int width, final int height) {
+                public void onSurfaceTextureAvailable(final SurfaceTexture texture,
+                                                      final int width, final int height) {
                     openCamera(width, height);
                 }
 
                 @Override
-                public void onSurfaceTextureSizeChanged(
-                        final SurfaceTexture texture, final int width, final int height) {
+                public void onSurfaceTextureSizeChanged(final SurfaceTexture texture,
+                                                        final int width, final int height) {
                     configureTransform(width, height);
                 }
 
@@ -215,6 +210,7 @@ public class CameraConnectionFragment extends Fragment {
             final OnImageAvailableListener imageListener,
             final int layout,
             final Size inputSize) {
+
         this.cameraConnectionCallback = connectionCallback;
         this.imageListener = imageListener;
         this.layout = layout;
@@ -380,6 +376,7 @@ public class CameraConnectionFragment extends Fragment {
     /**
      * Opens the camera specified by {@link CameraConnectionFragment#cameraId}.
      */
+    @SuppressLint("MissingPermission")
     private void openCamera(final int width, final int height) {
         setUpCameraOutputs();
         configureTransform(width, height);
@@ -575,6 +572,7 @@ public class CameraConnectionFragment extends Fragment {
      * Shows an error message dialog.
      */
     public static class ErrorDialog extends DialogFragment {
+
         private static final String ARG_MESSAGE = "message";
 
         public static ErrorDialog newInstance(final String message) {
@@ -590,14 +588,7 @@ public class CameraConnectionFragment extends Fragment {
             final Activity activity = getActivity();
             return new AlertDialog.Builder(activity)
                     .setMessage(getArguments().getString(ARG_MESSAGE))
-                    .setPositiveButton(
-                            android.R.string.ok,
-                            new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(final DialogInterface dialogInterface, final int i) {
-                                    activity.finish();
-                                }
-                            })
+                    .setPositiveButton(android.R.string.ok, (dialogInterface, i) -> activity.finish())
                     .create();
         }
     }

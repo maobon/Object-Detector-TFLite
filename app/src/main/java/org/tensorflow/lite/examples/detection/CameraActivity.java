@@ -31,14 +31,14 @@ import org.tensorflow.lite.examples.detection.env.Logger;
 import java.nio.ByteBuffer;
 
 public abstract class CameraActivity extends AppCompatActivity
-        implements OnImageAvailableListener,
-        Camera.PreviewCallback {
+        implements OnImageAvailableListener, Camera.PreviewCallback {
 
     private static final Logger LOGGER = new Logger();
 
     private static final int PERMISSIONS_REQUEST = 1;
 
     private static final String PERMISSION_CAMERA = Manifest.permission.CAMERA;
+
     protected int previewWidth = 0;
     protected int previewHeight = 0;
     private final boolean debug = false;
@@ -57,6 +57,7 @@ public abstract class CameraActivity extends AppCompatActivity
     protected void onCreate(final Bundle savedInstanceState) {
         LOGGER.d("onCreate " + this);
         super.onCreate(null);
+
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         setContentView(R.layout.tfe_od_activity_camera);
